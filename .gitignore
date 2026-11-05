@@ -1,2 +1,5 @@
 .DS_Store
 /build/
+/plan/.runtime/
+__pycache__/
+*.pyc
