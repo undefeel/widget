@@ -153,3 +153,24 @@ Wrong specs and missing ownership are specification errors, not execution
 failures. Track actual red acceptance/rejected review failures separately.
 
 Before a retry into an existing worktree, synchronize the current task spec and addendum as plan-only commits in that checkout. Confirm its AGENTS contract requires reading local addenda before work. A queued post-start send alone is insufficient proof that the correction entered the implementation context; require explicit disposition in the report. Preserve old runtime receipts, but archive a stale helper-Run cache before launching a new agent in the same checkout.
+
+
+## Native follow-up identity and custody
+
+A send to a settled worker can return delivery=follow_up with a NEW Task and
+Dispatch. Use those exact IDs from the receipt/current preamble, never combine
+the parent's task_id with the successor dispatch_id. Record runtime-created
+follow-ups under a local tracking ID and keep their parent artifact relationship
+explicit. Reconcile them into shared capacity records before launching more work.
+
+A release result ownership_transferred is not a stop confirmation. The successor
+may still be implementing in that checkout. Inspect worker-list/worker-show and
+retain one implementation owner; do not launch a parallel writer because the
+predecessor's assignment settled. Release the actual successor after it reports.
+
+If a review fingerprint changes, inspect both uncommitted changes AND the full
+reviewed-commit-to-HEAD range. A claim that only STATUS is dirty does not explain
+a HEAD change. Rerun review for changed product/test code; explicitly record any
+manual verification that only coordination/report commits changed and the reviewed
+source/test tree stayed identical. Never call that a successful automated
+fingerprint certification.

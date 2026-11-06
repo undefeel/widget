@@ -65,6 +65,12 @@ luna pieces, with disjoint file ownership.
   small corrections in at most two rounds. After two failed pieces, finish the
   implementation themselves. Large omissions are new pieces, not fix rounds.
 - Reviewers never edit, commit, launch agents, or demand tests beyond the spec.
+- A native `send` to a settled worker can create a new follow-up Task and
+  Dispatch. Report with the actual current preamble identities; parent IDs are
+  context only. Reconcile the receipt into plan state and shared capacity records.
+- A release receipt `ownership_transferred` does not prove process exit or permit
+  another writer in the checkout. Inspect the successor Dispatch before any
+  relaunch; keep one implementation owner per checkout.
 - Use `worker_done` with explicit success/failure and evidence, commits,
   acceptance results, review findings/dispositions, and remaining blockers.
 - Read `git diff --stat` first, then relevant patches. Never merge an unseen

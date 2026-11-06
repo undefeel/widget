@@ -1,6 +1,6 @@
 # Stage 01 — whole-project review and responsive limits refresh
 
-Status: approved by the user on 2026-11-06; execution in progress.
+Status: completed on 2026-11-06; all fixes merged, accepted and pushed.
 User scope: whole-project review, primarily Gemini high, fix confirmed findings,
 and make the refresh button show limits without waiting for token statistics.
 Clarification received: review the whole project, prioritize limits refresh.
@@ -62,9 +62,12 @@ without an architecture change. See 01-01.review.md for every disposition.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 01-04 | Safe process transport and JSON replies | Spec commands and review dispositions | 01-01 | Fetchers + Process harness | L3 | terra | done | task_00283c688444 | ctx_052bb5219b06 (merged) |
 | 01-05 | WAL-aware read-only SQLite | Spec commands and review dispositions | 01-01 | Usage + UsageReader harness | L2 | luna | done | task_3680b0de49d3 | ctx_419eaec053a6 (merged; follow-up 01-09) |
-| 01-06 | Truthful reset notifications and dedupe | Spec commands and review dispositions | 01-01 | Services + locales + Notification harness | L2 | luna | review | task_5c27e42e6aa0 | ctx_1ac40ed03b92 (follow-up complete) |
+| 01-06 | Truthful reset notifications and dedupe | Spec commands and review dispositions | 01-01 | Services + locales + Notification harness | L2 | luna | done | task_5c27e42e6aa0 | ctx_1ac40ed03b92 (follow-up merged/released) |
 | 01-07 | Race-safe watchdog observation | Spec commands and review dispositions | 01-01 | orchestrate.py + test_tools.py | L2 | luna | done | task_e31c44a002be | ctx_b92860eb293a (released/removed) |
 
 Wave 1: 01-02, 01-05, 01-07; wave 2: 01-04, 01-06 after capacity/ownership permits. Each lead uses at most one nested Luna concurrently for this wave. Merge 01-02 first to install generic standalone harness acceptance.
 
 Follow-ups: 01-08 (actual Task task_56626dbf6dd8, ctx_1ac40ed03b92) fixes measured-usage reset detection after unrelated publication; 01-09 (actual Task task_23f64509577c, ctx_0bd2a6e449f1, released) records the SQLite cleanup correction. These map native follow-up Tasks, not new Tasks hiding failures.
+
+## Completion
+All accepted findings F-01 through F-13 are implemented or explicitly dispositioned in 01-01.review.md and task reviews. Final integration acceptance at 663a101 passed 22 tool tests, four standalone Swift harnesses, universal app/widget builds and signatures. All owned worker/reviewer terminals were released; all five child worktrees and task branches were removed. See RESULTS.md and STATUS.md.
