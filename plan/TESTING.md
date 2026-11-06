@@ -27,12 +27,13 @@ reversible presentation or text changes.
 Full acceptance: `plan/tools/accept.sh`.
 
 This runs whitespace checks, Python tooling checks and executable stub tests,
-shell syntax checks, plist/resource validation and, on macOS, `./build.sh` plus
-signature verification. The full build compiles both the application and widget
+shell syntax checks, plist/resource validation and, on macOS, `./build.sh`, all
+standalone `Tests/run-*.sh` regression harnesses, and signature verification. The full build compiles both the application and widget
 for arm64 and x86_64. A non-macOS host exits unsuccessfully for full acceptance;
 `plan/tools/accept.sh --tools-only` explicitly checks only portable tooling.
 
-There is no configured Swift unit-test runner, Swift linter, or frontend.
+Standalone Swift regression harnesses are compiled directly by `Tests/run-*.sh`.
+There is no Swift package/Xcode test target, configured Swift linter, or frontend.
 Do not claim those ran. Do not introduce a new test/build architecture without
 owner approval. Focused Swift checks should use compiler commands from
 `build.sh`, with temporary outputs, or a targeted standalone harness specified
@@ -51,3 +52,6 @@ valid alternative representations; race tests must enumerate competing paths.
 Preserve pipeline failures when tailing output: use `set -o pipefail`, or capture
 the complete output to a temporary file, print its last 40 lines, and propagate
 the original exit code.
+
+At integration, coordination-only changes use `accept.sh --tools-only`; changes
+under Sources, Resources, tools, Tests or build.sh get full macOS acceptance.

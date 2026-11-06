@@ -76,3 +76,5 @@ Merged 01-07; full acceptance passed. Release/cleanup still required.
 Merge acceptance selection was corrected for macOS Bash 3.2 empty-array nounset behavior and the real shell/Git fixture now covers the full platform path with no optional flag.
 
 Merged 01-04; full acceptance passed. Release/cleanup still required.
+
+01-04 merged and integration acceptance passed at 8b28dfc (22 tooling tests, process and refresh harnesses, universal app/widget and signatures).

@@ -42,3 +42,7 @@ level, executor, status (`todo|in_progress|review|done|failed`), Orca Task ID,
 Dispatch ID, failure count, review evidence, acceptance evidence.
 
 See `WORKFLOW.md` for coordination and `TESTING.md` for verification.
+
+Stage 01 added standalone Swift regression harnesses under `Tests/run-*.sh`,
+compiled with the existing Command Line Tools. No test framework/package or
+build-stack migration was introduced.
