@@ -69,8 +69,6 @@ final class LimitsStore: ObservableObject {
     /// Ключ локализации (переводится при отображении).
     static let vpnOffMessage = "VPN выключен — лимиты не запрашиваются"
 
-    private var requireVPN: Bool { UserDefaults.standard.bool(forKey: Self.requireVPNKey) }
-
     init() {
         Pref.register()
         operations = .live

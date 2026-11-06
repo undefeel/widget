@@ -158,12 +158,24 @@ private struct Captures {
 
 @MainActor private func testVPNFenceAndPersistedState() async {
     let fetchGate = Gate("provider"), usageGate = Gate("usage")
+    let fetchCalls = Locked(0), usageCalls = Locked(0)
+    let fetchCompletions = Locked(0), usageCompletions = Locked(0)
     let vpn = Locked(true)
     let old = status(.claude, 11)
     let starting = Snapshot(providers: [old], generatedAt: Date(), usage: usage(5))
     let (store, captures) = makeStore(snapshot: starting, vpn: vpn,
-        usageWork: { usageGate.enterAndWait(); return usage(99) }, fetchWork: { provider in
-            if provider == .claude { fetchGate.enterAndWait() }
+        usageWork: {
+            let call = usageCalls.mutate { count -> Int in count += 1; return count }
+            if call == 1 { usageGate.enterAndWait() }
+            let result = usage(call == 1 ? 99 : 100)
+            usageCompletions.mutate { $0 += 1 }
+            return result
+        }, fetchWork: { provider in
+            if provider == .claude {
+                let call = fetchCalls.mutate { count -> Int in count += 1; return count }
+                if call == 1 { fetchGate.enterAndWait() }
+                fetchCompletions.mutate { $0 += 1 }
+            }
             return .success(status(provider, 88))
         })
     let first = Task { await store.refresh(force: true) }
@@ -183,7 +195,9 @@ private struct Captures {
     usageGate.release()
     await first.value
     await eventually("stale limits completion") { !store.isRefreshing }
-    try? await Task.sleep(nanoseconds: 50_000_000)
+    await eventually("invalidated work settlement") {
+        fetchCompletions.read { $0 } == 1 && usageCompletions.read { $0 } == 1
+    }
     precondition(store.snapshot.paused == LimitsStore.vpnOffMessage, "late completion cleared VPN pause")
     precondition(store.snapshot.status(.claude).headline() == 11, "late completion replaced superseded limits")
     precondition(store.snapshot.usage?.total == 5, "late usage completion replaced prior statistics while VPN was paused")
@@ -191,6 +205,22 @@ private struct Captures {
     precondition(persisted == store.snapshot, "saved snapshot differs from paused state")
     precondition(captures.reloads.read { $0 } > 0, "pause snapshot was not widget-visible")
     vpn.mutate { $0 = true }
+    await store.refresh(force: true)
+    await waitForLimits(store)
+    await eventually("resumed usage publication") {
+        store.snapshot.paused == nil && store.snapshot.usage?.total == 100
+    }
+    precondition(fetchCalls.read { $0 } == 2, "VPN resume did not start a fresh provider request")
+    precondition(usageCalls.read { $0 } == 2, "VPN resume did not start a fresh usage scan")
+    precondition(store.snapshot.status(.claude).headline() == 88,
+                 "VPN resume did not publish fresh provider data")
+    precondition(store.snapshot.paused == nil, "successful VPN resume left the snapshot paused")
+    await eventually("resumed persisted and widget snapshot") {
+        let saved = captures.saves.read { $0.last }
+        return saved == store.snapshot && saved?.paused == nil
+            && saved?.status(.claude).headline() == 88 && saved?.usage?.total == 100
+            && captures.reloads.read { $0 } >= 2
+    }
 }
 
 @MainActor private func testFallbackAndUnchangedPayload() async {
@@ -227,14 +257,14 @@ private struct Captures {
 @MainActor private func testFastProviderBeforeSlowProviderAndUsage() async {
     let slowProvider = Gate("slow provider"), slowUsage = Gate("slow usage")
     let initial = Snapshot(providers: Provider.allCases.map { status($0, 0) }, generatedAt: Date())
-    let (store, captures) = makeStore(snapshot: initial,
+    let (store, _) = makeStore(snapshot: initial,
         usageWork: { slowUsage.enterAndWait(); return usage(66) },
         fetchWork: { provider in
             if provider == .claude { slowProvider.enterAndWait() }
             return .success(status(provider, provider == .codex ? 44 : 31))
         })
     let refresh = Task { await store.refresh(force: true) }
-    await eventually("fast Codex result") { captures.reads.read { $0["fetch-codex", default: 0] == 1 } }
+    await eventually("fast Codex publication") { store.snapshot.status(.codex).headline() == 44 }
     slowProvider.waitUntilStarted(); slowUsage.waitUntilStarted()
     let publishedBeforeSlowWork = store.snapshot.status(.codex).headline() == 44
     let indicatorStayedActive = store.isRefreshing
