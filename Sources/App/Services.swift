@@ -83,8 +83,7 @@ enum Launcher {
 
 enum NotificationDecisions {
     static func isReset(previous: LimitWindow, current: LimitWindow,
-                        previousObservedAt: Date, observedAt: Date,
-                        threshold: Double) -> Bool {
+                        observedAt: Date, threshold: Double) -> Bool {
         guard previous.name == current.name,
               let oldDeadline = previous.resetsAt,
               let newDeadline = current.resetsAt,
@@ -93,7 +92,8 @@ enum NotificationDecisions {
               oldDeadline <= observedAt,
               newDeadline > observedAt,
               newDeadline > oldDeadline,
-              previous.effectiveUsed(at: previousObservedAt) >= threshold,
+              previous.usedPercent.isFinite,
+              previous.usedPercent >= threshold,
               current.effectiveUsed(at: observedAt) < threshold else { return false }
         return true
     }
@@ -164,7 +164,6 @@ final class Notifier {
                 guard defaults.bool(forKey: Pref.notifyReset),
                       let ow = old.windows.first(where: { $0.name == w.name }),
                       NotificationDecisions.isReset(previous: ow, current: w,
-                                                    previousObservedAt: prev.generatedAt,
                                                     observedAt: observedAt, threshold: threshold) else { continue }
                 let resetKey = "reset|\(s.provider.rawValue)|\(ow.name)|\(Int(ow.resetsAt?.timeIntervalSince1970 ?? 0))"
                 if sent.insert(resetKey).inserted {

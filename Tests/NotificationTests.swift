@@ -22,7 +22,9 @@ enum NotificationTests {
         let notifier = Notifier(defaults: defaults) { notices.append(($0, $1)) }
         let previousTime = Date(timeIntervalSince1970: 1_000)
         let observationTime = Date(timeIntervalSince1970: 1_100)
-        let prior = snapshot(at: previousTime, usage: 98, deadline: 1_050)
+        // An unrelated publication advanced the whole snapshot after the
+        // deadline; the window still contains its last measured 98% usage.
+        let prior = snapshot(at: Date(timeIntervalSince1970: 1_075), usage: 98, deadline: 1_050)
         let rolled = snapshot(at: observationTime, usage: 6, deadline: 2_000)
         notifier.check(prev: prior, next: rolled)
         try expect(notices.count == 1, "real rollover should emit one notice")
