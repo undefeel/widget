@@ -270,6 +270,84 @@ class ToolsTest(unittest.TestCase):
         self.invoke('wait', '1')
         self.assertFalse(self.calls('send'))
 
+    def test_wait_survives_incomplete_filesystem_observation(self):
+        self.existing_start()
+        self.invoke('wait', '1')
+        record_path = self.root / '.git/orca-plan-runtime/dispatch-ctx_1.json'
+        record = json.loads(record_path.read_text())
+        record['unchangedSince'] = time.time() - 601
+        record_path.write_text(json.dumps(record))
+
+        injection = self.root / 'observation-stub'
+        injection.mkdir()
+        (injection / 'sitecustomize.py').write_text(r'''import os, pathlib, sys
+if pathlib.Path(sys.argv[0]).name == 'orchestrate.py' and sys.argv[1:2] == ['wait']:
+    original = os.scandir
+    target = pathlib.Path(os.environ['OBSERVE_ROOT']).resolve()
+    marker = pathlib.Path(os.environ['OBSERVE_MARKER'])
+    def flaky(path='.'):
+        if pathlib.Path(path).resolve() == target and not marker.exists():
+            marker.write_text('raised once')
+            raise PermissionError('deterministic transient traversal failure')
+        return original(path)
+    os.scandir = flaky
+''')
+        marker = self.root / 'observation-stub/raised'
+        env = dict(self.env, PYTHONPATH=str(injection), OBSERVE_ROOT=str(self.root),
+                   OBSERVE_MARKER=str(marker))
+        before_checks = len(self.calls('check'))
+        result = self.invoke('wait', '1', env=env)
+        self.assertIn('"messages"', result.stdout)
+        self.assertTrue(marker.exists())
+        self.assertEqual(len(self.calls('check')), before_checks + 1)
+        self.assertFalse(self.calls('send'))
+
+        # The post-peek complete sample starts a fresh stability window.
+        record = json.loads(record_path.read_text())
+        self.assertGreater(record['unchangedSince'], time.time() - 10)
+        record['unchangedSince'] = time.time() - 601
+        record_path.write_text(json.dumps(record))
+        self.state(idle=True)
+        self.invoke('wait', '1')
+        self.assertEqual(len(self.calls('check')), before_checks + 2)
+        self.assertEqual(len(self.calls('send')), 1)
+
+    def test_watchdog_prunes_excluded_dirs_and_directory_symlinks(self):
+        self.existing_start()
+        target = Path(self.temp.name) / 'linked-target'
+        target.mkdir()
+        (target / 'nested').write_text('outside workspace traversal')
+        (self.root / 'linked-dir').symlink_to(target, target_is_directory=True)
+        for name in ('.git', 'build', '.runtime', '__pycache__'):
+            (self.root / name).mkdir(exist_ok=True)
+        injection = self.root / 'observation-stub'
+        injection.mkdir()
+        seen = self.root / 'observation-stub/seen'
+        (injection / 'sitecustomize.py').write_text(r'''import os, pathlib, sys
+if pathlib.Path(sys.argv[0]).name == 'orchestrate.py' and sys.argv[1:2] == ['wait']:
+    original = os.scandir
+    root = pathlib.Path(os.environ['OBSERVE_ROOT']).resolve()
+    target = pathlib.Path(os.environ['OBSERVE_TARGET']).resolve()
+    seen = pathlib.Path(os.environ['OBSERVE_SEEN'])
+    def tracked(path='.'):
+        candidate = pathlib.Path(path).resolve()
+        try:
+            relative = candidate.relative_to(root)
+        except ValueError:
+            relative = None
+        if candidate == target or (relative and relative.parts and
+                relative.parts[0] in {'.git', 'build', '.runtime', '__pycache__'}):
+            with seen.open('a') as output:
+                output.write(str(relative) + '\\n')
+        return original(path)
+    os.scandir = tracked
+''')
+        env = dict(self.env, PYTHONPATH=str(injection), OBSERVE_ROOT=str(self.root),
+                   OBSERVE_TARGET=str(target),
+                   OBSERVE_SEEN=str(seen))
+        self.invoke('wait', '1', env=env)
+        self.assertFalse(seen.exists(), seen.read_text() if seen.exists() else '')
+
     def test_merge_rejects_dirty_checkout(self):
         (self.root / 'dirty').write_text('dirty')
         self.invoke('merge', '01-01', 'feature', code=1)
