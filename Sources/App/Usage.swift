@@ -186,16 +186,20 @@ enum UsageScanner {
     }
 }
 
-/// Чтение чужой SQLite-базы: только чтение и `immutable=1`, чтобы рядом не появлялись -wal/-shm.
+/// Чтение SQLite-базы только для чтения. Обычная SQLite WAL-координация может
+/// использовать соседние `-wal`/`-shm` файлы, чтобы безопасно видеть активные записи.
 private final class SQLiteReader {
     private var db: OpaquePointer?
 
     init?(_ url: URL) {
-        let path = url.path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? url.path
-        guard sqlite3_open_v2("file:\(path)?immutable=1", &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK else {
+        // Pass the filesystem path directly: URI parsing would reinterpret literal
+        // characters such as ?, # and % in conversation filenames.
+        guard sqlite3_open_v2(url.path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
             sqlite3_close(db)
             return nil
         }
+        // Bound waits when another process holds a conflicting SQLite lock.
+        sqlite3_busy_timeout(db, 250)
     }
 
     deinit { sqlite3_close(db) }
