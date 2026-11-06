@@ -104,7 +104,7 @@
 "Только значок, цвет по самому загруженному агенту" = "Icon only, colored by the busiest agent";
 "Версия" = "Version";
 "%@ — лимит сброшен" = "%@ — limit reset";
-"%@: снова доступно 100%%" = "%@: 100%% available again";
+"Лимит обновлён; использовано %@" = "Limit reset; %@ used";
 "Самый узкий лимит" = "Tightest limit";
 "Лимит, который закончится первым." = "The limit that will run out first.";
 "5 ч" = "5h";
