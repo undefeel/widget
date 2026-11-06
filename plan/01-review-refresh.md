@@ -1,6 +1,6 @@
 # Stage 01 — whole-project review and responsive limits refresh
 
-Status: awaiting user approval of this plan.
+Status: approved by the user on 2026-11-06; execution in progress.
 User scope: whole-project review, primarily Gemini high, fix confirmed findings,
 and make the refresh button show limits without waiting for token statistics.
 Clarification received: review the whole project, prioritize limits refresh.
@@ -23,8 +23,8 @@ contracts is outside this performance fix unless the audit proves a separate bug
 
 | ID | Description | Ready when | Dependencies | Files | Level | Executor | Status | Orca task_id | dispatch_id |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 01-01 | Read-only whole-project audit, prioritize refresh, concurrency and process/protocol handling | Report contains reproducible blocker/major/minor findings and exact locations | Plan approval | All tracked files read-only; report recorded by orchestrator | L2 review | Gemini `gemini-3.8-flash-high` | todo | pending | pending |
-| 01-02 | Decouple limits publication from token statistics and validate refresh races | Responsive limits path, independent guarded usage work, meaningful deterministic regressions, full acceptance and lead review | 01-01, plan approval | See exact Ownership in spec | L3 | terra lead + luna pieces | todo | pending | pending |
+| 01-01 | Read-only whole-project audit, prioritize refresh, concurrency and process/protocol handling | Report contains reproducible blocker/major/minor findings and exact locations | Plan approval | All tracked files read-only; report recorded by orchestrator | L2 review | Gemini `gemini-3.8-flash-high` | todo | task_785f694791f7 | pending |
+| 01-02 | Decouple limits publication from token statistics and validate refresh races | Responsive limits path, independent guarded usage work, meaningful deterministic regressions, full acceptance and lead review | 01-01, plan approval | See exact Ownership in spec | L3 | terra lead + luna pieces | todo | task_01e9d8be1c52 | pending |
 | 01-03 | Triage remaining audit findings into exact bounded fix specs | Each accepted finding is covered by 01-02 or an approved concrete fix spec; rejected findings have reasons | 01-01 | `plan/` only during triage | L1 planning | sol orchestrator | todo | not created | none |
 
 Do not create an executable catch-all fix Task for 01-03. Add exact tasks after

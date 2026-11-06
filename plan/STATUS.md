@@ -1,8 +1,8 @@
 # Project status
 
-Run: none
-Stage: 01-review-refresh (awaiting plan approval)
-State: bootstrap complete; no product agents started
+Run: run_0007adffba77
+Stage: 01-review-refresh (approved)
+State: preparing approved audit and refresh Tasks
 
 ## Active
 
@@ -19,9 +19,7 @@ The user requested a whole-project Gemini high review, confirmed fixes, and
 faster limits refresh independent of statistics. Scope clarification received:
 review the entire project, prioritize limits refresh.
 
-Read `01-review-refresh.md` and specs `01-01.md` / `01-02.md`. They are prepared
-but not yet approved. Per the user's operating model, wait for approval before
-creating the Run or starting execution. Further confirmed audit fixes receive
+Read `01-review-refresh.md` and specs `01-01.md` / `01-02.md`. User approved this plan on 2026-11-06. Execute without another approval gate. Further confirmed audit fixes receive
 their own exact specs after triage; no catch-all implementation Task exists.
 
 Read `HANDOFF.md` after a context compaction. Do not claim a compact occurred
