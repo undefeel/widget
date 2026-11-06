@@ -13,6 +13,7 @@ State: 01-07 accepted; 01-05 held for final ownership correction; 01-02 and 01-0
 - 01-04 | ctx_052bb5219b06 | terra | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-04
 - 01-06 | ctx_89a020aa8df3 | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-06
 - 01-05 | ctx_42dfc61443df | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-05
+- 01-05 | ctx_419eaec053a6 | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-05
 <!-- active:end -->
 
 ## Queue
@@ -62,3 +63,7 @@ Wave 1 launched: refresh lead, WAL reader fix and watchdog fix. Next: 01-04 and 
 
 01-05 ctx_42dfc61443df reverified old scope without applying the mandatory addendum. This is an addendum-delivery/spec synchronization failure, not a second implementation failure. Synchronize the current plan/addendum/AGENTS into the existing worktree before relaunch; do not count old review artifacts as fresh certification.
 01-04 and 01-06 reported complete with passing acceptance and Gemini dispositions; awaiting integration.
+
+SQLite follow-up reconciled: task_23f64509577c / ctx_0bd2a6e449f1 implemented 7a100da and reported with matching IDs; released. Parent verification ctx_419eaec053a6 also succeeded against 059487e. The old ownership_transferred receipt was not a process exit; the actual follow-up owner has now been released.
+01-08 tracks notification integration follow-up task_56626dbf6dd8 / ctx_1ac40ed03b92, reused the settled 01-06 agent via native send. No duplicate worker was launched.
+01-02 completed and accepted for integration: controlled 7 ms publication with statistics held, full worker acceptance and Gemini/lead review passed.

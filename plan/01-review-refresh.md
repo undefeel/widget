@@ -66,3 +66,5 @@ without an architecture change. See 01-01.review.md for every disposition.
 | 01-07 | Race-safe watchdog observation | Spec commands and review dispositions | 01-01 | orchestrate.py + test_tools.py | L2 | luna | review | task_e31c44a002be | ctx_b92860eb293a |
 
 Wave 1: 01-02, 01-05, 01-07; wave 2: 01-04, 01-06 after capacity/ownership permits. Each lead uses at most one nested Luna concurrently for this wave. Merge 01-02 first to install generic standalone harness acceptance.
+
+Follow-ups: 01-08 (actual Task task_56626dbf6dd8, ctx_1ac40ed03b92) fixes measured-usage reset detection after unrelated publication; 01-09 (actual Task task_23f64509577c, ctx_0bd2a6e449f1, released) records the SQLite cleanup correction. These map native follow-up Tasks, not new Tasks hiding failures.
