@@ -1,4 +1,6 @@
 import Foundation
+import CoreFoundation
+import Darwin
 
 struct FetchError: Error, LocalizedError {
     let message: String
@@ -19,31 +21,98 @@ enum Shell {
         p.arguments = args
         if let cwd { p.currentDirectoryURL = cwd }
         if let env { p.environment = env }
-        let out = Pipe(), inp = Pipe()
+        let out = Pipe(), inp = input == nil ? nil : Pipe()
         p.standardOutput = out
         p.standardError = FileHandle.nullDevice
-        p.standardInput = input == nil ? FileHandle.nullDevice : inp
-
-        let lock = NSLock()
+        p.standardInput = inp ?? FileHandle.nullDevice
+        let reader = out.fileHandleForReading.fileDescriptor
+        let writer = inp?.fileHandleForWriting.fileDescriptor ?? -1
+        func close(_ handle: FileHandle?) { try? handle?.close() }
+        func nonblocking(_ fd: Int32) -> Bool {
+            let flags = fcntl(fd, F_GETFL)
+            return flags >= 0 && fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0
+        }
+        let safeWriter = writer < 0 || (fcntl(writer, F_SETNOSIGPIPE, 1) == 0 && nonblocking(writer))
+        guard nonblocking(reader) else {
+            close(out.fileHandleForReading); close(out.fileHandleForWriting)
+            close(inp?.fileHandleForReading); close(inp?.fileHandleForWriting)
+            return ""
+        }
+        let bytes = input.map { Array($0.utf8) } ?? []
+        var sent = 0
         var buffer = Data()
-        let done = DispatchSemaphore(value: 0)
-        out.fileHandleForReading.readabilityHandler = { h in
-            let d = h.availableData
-            if d.isEmpty { h.readabilityHandler = nil; done.signal(); return }
-            lock.lock(); buffer.append(d); let s = String(decoding: buffer, as: UTF8.self); lock.unlock()
-            if let stopWhen, stopWhen(s) { done.signal() }
+        var readOpen = true
+        var writeOpen = writer >= 0 && safeWriter
+        do { try p.run() } catch {
+            close(out.fileHandleForReading); close(out.fileHandleForWriting)
+            close(inp?.fileHandleForReading); close(inp?.fileHandleForWriting)
+            return ""
+        }
+        close(out.fileHandleForWriting)
+        close(inp?.fileHandleForReading)
+        if !safeWriter { close(inp?.fileHandleForWriting) }
+        if bytes.isEmpty && !keepStdinOpen { close(inp?.fileHandleForWriting); writeOpen = false }
+
+        let deadline = ProcessInfo.processInfo.systemUptime + max(0, timeout)
+        var matched = false
+        var eofDeadline: TimeInterval?
+        while !matched {
+            let now = ProcessInfo.processInfo.systemUptime
+            if now >= deadline || !readOpen { break }
+            if !p.isRunning {
+                if writeOpen { close(inp?.fileHandleForWriting); writeOpen = false }
+                if eofDeadline == nil { eofDeadline = now + 0.35 }
+                if !readOpen || now >= eofDeadline! { break }
+            }
+            var fds: [pollfd] = []
+            if readOpen { fds.append(pollfd(fd: reader, events: Int16(POLLIN | POLLHUP | POLLERR), revents: 0)) }
+            if writeOpen && sent < bytes.count { fds.append(pollfd(fd: writer, events: Int16(POLLOUT | POLLHUP | POLLERR), revents: 0)) }
+            let remaining = min(0.05, max(0, deadline - now))
+            let waitMs = Int32(max(1, remaining * 1000))
+            _ = fds.withUnsafeMutableBufferPointer { poll($0.baseAddress, nfds_t($0.count), waitMs) }
+
+            for i in fds.indices where fds[i].fd == reader && fds[i].revents != 0 {
+                var readBudget = 1_048_576
+                while readBudget > 0 && ProcessInfo.processInfo.systemUptime < deadline {
+                    let capacity = min(65536, readBudget)
+                    var chunk = [UInt8](repeating: 0, count: capacity)
+                    let n = chunk.withUnsafeMutableBytes { Darwin.read(reader, $0.baseAddress, $0.count) }
+                    if n > 0 {
+                        readBudget -= n
+                        if eofDeadline != nil { eofDeadline = ProcessInfo.processInfo.systemUptime + 0.35 }
+                        buffer.append(contentsOf: chunk.prefix(n))
+                        if let stopWhen, buffer.contains(10),
+                           stopWhen(String(decoding: buffer, as: UTF8.self)) { matched = true; break }
+                    } else if n == 0 { close(out.fileHandleForReading); readOpen = false; break }
+                    else if errno == EINTR { continue }
+                    else { if errno != EAGAIN && errno != EWOULDBLOCK { close(out.fileHandleForReading); readOpen = false }; break }
+                }
+                if matched { break }
+            }
+            if !matched {
+                for i in fds.indices where fds[i].fd == writer && fds[i].revents != 0 {
+                    let count = min(65536, bytes.count - sent)
+                    let n = bytes.withUnsafeBytes { raw in Darwin.write(writer, raw.baseAddress!.advanced(by: sent), count) }
+                    if n > 0 { sent += n }
+                    else if n < 0 && errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK {
+                        close(inp?.fileHandleForWriting); writeOpen = false
+                    }
+                    if sent == bytes.count && !keepStdinOpen { close(inp?.fileHandleForWriting); writeOpen = false }
+                }
+            }
         }
 
-        do { try p.run() } catch { return "" }
-        if let input {
-            inp.fileHandleForWriting.write(Data(input.utf8))
-            if !keepStdinOpen { try? inp.fileHandleForWriting.close() }
+        if p.isRunning {
+            p.terminate()
+            let grace = ProcessInfo.processInfo.systemUptime + 0.2
+            while p.isRunning && ProcessInfo.processInfo.systemUptime < grace { usleep(10_000) }
+            if p.isRunning { _ = kill(p.processIdentifier, SIGKILL) }
         }
-        _ = done.wait(timeout: .now() + timeout)
-        if p.isRunning { p.terminate() }
-        out.fileHandleForReading.readabilityHandler = nil
-        try? inp.fileHandleForWriting.close()
-        lock.lock(); defer { lock.unlock() }
+        p.waitUntilExit()
+        close(inp?.fileHandleForWriting)
+        close(out.fileHandleForReading)
+        close(out.fileHandleForWriting)
+        close(inp?.fileHandleForReading)
         return String(decoding: buffer, as: UTF8.self)
     }
 }
@@ -71,7 +140,7 @@ enum CLI {
         lock.lock(); if let c = cache[name] { lock.unlock(); return c }; lock.unlock()
         var found = searchDirs.map { "\($0)/\(name)" }.first { FileManager.default.isExecutableFile(atPath: $0) }
         if found == nil {
-            let r = Shell.run("/bin/zsh", ["-lc", "command -v \(name)"], timeout: 10)
+            let r = Shell.run("/bin/zsh", ["-lc", "command -v \"$1\"", "_", name], timeout: 10)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             if r.hasPrefix("/"), FileManager.default.isExecutableFile(atPath: r) { found = r }
         }
@@ -232,6 +301,18 @@ enum ClaudeFetcher {
 // MARK: - Codex: `codex app-server` → account/rateLimits/read
 
 enum CodexFetcher {
+    static func reply(_ line: Substring) -> [String: Any]? {
+        guard let msg = J.object(Data(line.utf8)) as? [String: Any],
+              let id = msg["id"] as? NSNumber,
+              CFGetTypeID(id) != CFBooleanGetTypeID(), id.doubleValue == 1,
+              msg.keys.contains("result") || msg.keys.contains("error") else { return nil }
+        return msg
+    }
+
+    static func replies(_ output: String) -> [[String: Any]] {
+        output.split(separator: "\n", omittingEmptySubsequences: false).dropLast().compactMap(reply)
+    }
+
     static func fetchCLI() -> Result<ProviderStatus, FetchError> {
         guard let codex = CLI.find("codex") else { return .failure(FetchError(L("codex CLI не найден"))) }
         let input = [
@@ -242,12 +323,10 @@ enum CodexFetcher {
         let out = Shell.run(codex, ["app-server"], input: input, keepStdinOpen: true, cwd: CLI.workDir,
                             env: CLI.environment, timeout: 30) { buf in
             // Есть полностью дочитанная строка с ответом на запрос id=1.
-            buf.split(separator: "\n", omittingEmptySubsequences: false).dropLast().contains { $0.contains(#""id":1,"#) }
+            !replies(buf).isEmpty
         }
 
-        guard let line = out.split(separator: "\n").first(where: { $0.contains(#""id":1,"#) }),
-              let msg = J.object(Data(line.utf8)) as? [String: Any]
-        else { return .failure(FetchError(L("codex app-server не ответил"))) }
+        guard let msg = replies(out).first else { return .failure(FetchError(L("codex app-server не ответил"))) }
         if let err = msg["error"] as? [String: Any] {
             return .failure(FetchError("codex: \(err["message"] as? String ?? L("ошибка"))"))
         }
