@@ -2,7 +2,7 @@
 
 Run: run_0007adffba77
 Stage: 01-review-refresh (approved)
-State: wave 1 running (01-02 terra, 01-05 luna, 01-07 luna)
+State: 01-05 and 01-07 accepted for integration; 01-02 and 01-04 leads running
 
 ## Active
 
@@ -11,6 +11,7 @@ State: wave 1 running (01-02 terra, 01-05 luna, 01-07 luna)
 - 01-02 | ctx_99d5e019e7a8 | terra | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-02
 - 01-05 | ctx_6f9f96cdcdec | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-05
 - 01-07 | ctx_b92860eb293a | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-07
+- 01-04 | ctx_052bb5219b06 | terra | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-04
 <!-- active:end -->
 
 ## Queue
@@ -49,3 +50,5 @@ unless the interface actually performed it.
 Audit 01-01 completed; ctx_0ceb147c0f1e released with closed_agent_terminal receipt.
 
 Wave 1 launched: refresh lead, WAL reader fix and watchdog fix. Next: 01-04 and 01-06 when capacity permits; 01-02 integration first.
+
+01-05 and 01-07: passing worker acceptance and clean Gemini reviews; diffs inspected, awaiting 01-02-first integration. 01-04 started as ctx_052bb5219b06.
