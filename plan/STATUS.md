@@ -9,8 +9,6 @@ State: 01-02 merged/pushed; integrating ready fixes; 01-08 notification correcti
 <!-- active:start -->
 - 01-01 | ctx_0ceb147c0f1e | gemini | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/Work/widget
 - 01-06 | ctx_89a020aa8df3 | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-06
-- 01-05 | ctx_42dfc61443df | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-05
-- 01-05 | ctx_419eaec053a6 | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-05
 <!-- active:end -->
 
 ## Queue
@@ -78,3 +76,5 @@ Merge acceptance selection was corrected for macOS Bash 3.2 empty-array nounset 
 Merged 01-04; full acceptance passed. Release/cleanup still required.
 
 01-04 merged and integration acceptance passed at 8b28dfc (22 tooling tests, process and refresh harnesses, universal app/widget and signatures).
+
+Merged 01-05; full acceptance passed. Release/cleanup still required.
