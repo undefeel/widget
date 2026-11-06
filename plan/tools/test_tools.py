@@ -373,14 +373,15 @@ if pathlib.Path(sys.argv[0]).name == 'orchestrate.py' and sys.argv[1:2] == ['wai
         self.commit()
         self.command('git', 'push', 'origin', 'main')
         self.command('git', 'checkout', '-b', 'feature')
-        (self.root / 'feature.txt').write_text('feature')
+        (self.root / 'Sources').mkdir()
+        (self.root / 'Sources/example.swift').write_text('// platform change')
         check = self.root / 'plan/tools/accept.sh'
-        check.write_text('#!/bin/bash\necho acceptance >> .git/accept-calls\n')
+        check.write_text('#!/bin/bash\nprintf "acceptance %s\\n" "$*" >> .git/accept-calls\n')
         check.chmod(0o755)
         self.commit()
         self.command('git', 'checkout', 'main')
         self.invoke('merge', '01-01', 'feature')
-        self.assertEqual((self.root / '.git/accept-calls').read_text(), 'acceptance\n')
+        self.assertEqual((self.root / '.git/accept-calls').read_text(), 'acceptance \n')
         self.assertEqual(self.command('git', 'rev-parse', 'HEAD'), self.command('git', 'rev-parse', 'origin/main'))
 
 

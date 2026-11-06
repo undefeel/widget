@@ -71,3 +71,7 @@ Merged 01-02; full acceptance passed. Release/cleanup still required.
 01-02 integration acceptance passed and pushed at 23d6871. Merge helper now selects portable-only acceptance for coordination-only diffs, as required by the platform-target policy; app/resource/test changes still get full macOS acceptance.
 
 Merged 01-07; full acceptance passed. Release/cleanup still required.
+
+01-02 and 01-07 worker terminals released and merged child worktrees removed after confirming ancestry and discarding only helper-generated STATUS rows.
+01-08 completed as ctx_1ac40ed03b92: measured-usage regression and fresh Gemini pass; fixes 08ae596 / 4a88cd0. All implementation work settled; serial integration remains.
+Merge acceptance selection was corrected for macOS Bash 3.2 empty-array nounset behavior and the real shell/Git fixture now covers the full platform path with no optional flag.
