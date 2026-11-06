@@ -8,7 +8,6 @@ State: 01-02 merged/pushed; integrating ready fixes; 01-08 notification correcti
 
 <!-- active:start -->
 - 01-01 | ctx_0ceb147c0f1e | gemini | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/Work/widget
-- 01-07 | ctx_b92860eb293a | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-07
 - 01-04 | ctx_052bb5219b06 | terra | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-04
 - 01-06 | ctx_89a020aa8df3 | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-06
 - 01-05 | ctx_42dfc61443df | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-05
@@ -70,3 +69,5 @@ SQLite follow-up reconciled: task_23f64509577c / ctx_0bd2a6e449f1 implemented 7a
 Merged 01-02; full acceptance passed. Release/cleanup still required.
 
 01-02 integration acceptance passed and pushed at 23d6871. Merge helper now selects portable-only acceptance for coordination-only diffs, as required by the platform-target policy; app/resource/test changes still get full macOS acceptance.
+
+Merged 01-07; full acceptance passed. Release/cleanup still required.
