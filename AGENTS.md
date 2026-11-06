@@ -44,6 +44,11 @@ luna pieces, with disjoint file ownership.
 
 ## Execution and review
 
+- Before implementing an assigned Task, read the current checkout's
+  `plan/specs/<ID>.md` and every existing `<ID>.addendum.md`. The Orca Task
+  brief is immutable and may predate owner corrections. Addenda are mandatory;
+  the final report must explicitly state their disposition. Do not rely solely
+  on a previously completed implementation or a previous review artifact.
 - Follow `plan/WORKFLOW.md` and the version-matched Orca skill. Resolve the CLI
   as specified there; inspect `skills get orchestration --full` and command help
   when flags differ. Do not invent flags or bypass a circuit breaker.
