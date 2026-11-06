@@ -61,7 +61,7 @@ without an architecture change. See 01-01.review.md for every disposition.
 | ID | Description | Acceptance | Dependencies | Files | Level | Executor | Status | task_id | dispatch_id |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 01-04 | Safe process transport and JSON replies | Spec commands and review dispositions | 01-01 | Fetchers + Process harness | L3 | terra | in_progress | task_00283c688444 | ctx_052bb5219b06 |
-| 01-05 | WAL-aware read-only SQLite | Spec commands and review dispositions | 01-01 | Usage + UsageReader harness | L2 | luna | in_progress | task_3680b0de49d3 | correction pending (old ctx_6f9f96cdcdec settled) |
+| 01-05 | WAL-aware read-only SQLite | Spec commands and review dispositions | 01-01 | Usage + UsageReader harness | L2 | luna | in_progress | task_3680b0de49d3 | ctx_42dfc61443df (correction; old attempt released) |
 | 01-06 | Truthful reset notifications and dedupe | Spec commands and review dispositions | 01-01 | Services + locales + Notification harness | L2 | luna | in_progress | task_5c27e42e6aa0 | ctx_89a020aa8df3 |
 | 01-07 | Race-safe watchdog observation | Spec commands and review dispositions | 01-01 | orchestrate.py + test_tools.py | L2 | luna | review | task_e31c44a002be | ctx_b92860eb293a |
 
