@@ -8,7 +8,6 @@ State: 01-02 merged/pushed; integrating ready fixes; 01-08 notification correcti
 
 <!-- active:start -->
 - 01-01 | ctx_0ceb147c0f1e | gemini | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/Work/widget
-- 01-06 | ctx_89a020aa8df3 | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-06
 <!-- active:end -->
 
 ## Queue
@@ -80,3 +79,5 @@ Merged 01-04; full acceptance passed. Release/cleanup still required.
 Merged 01-05; full acceptance passed. Release/cleanup still required.
 
 01-05 integration passed and pushed at d6f8147 (22 tooling tests, process, refresh and WAL/one-close/busy reader harnesses, universal app/widget/signatures). Current verifier ctx_419eaec053a6 is already_released; earlier follow-up ctx_0bd2a6e449f1 was explicitly closed. 01-04 released and its merged worktree removed.
+
+Merged 01-06; full acceptance passed. Release/cleanup still required.
