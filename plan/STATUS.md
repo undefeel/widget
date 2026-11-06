@@ -9,7 +9,6 @@ State: 01-07 accepted; 01-05 held for final ownership correction; 01-02 and 01-0
 <!-- active:start -->
 - 01-01 | ctx_0ceb147c0f1e | gemini | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/Work/widget
 - 01-02 | ctx_99d5e019e7a8 | terra | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-02
-- 01-05 | ctx_6f9f96cdcdec | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-05
 - 01-07 | ctx_b92860eb293a | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-07
 - 01-04 | ctx_052bb5219b06 | terra | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-04
 - 01-06 | ctx_89a020aa8df3 | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-06
@@ -55,3 +54,5 @@ Wave 1 launched: refresh lead, WAL reader fix and watchdog fix. Next: 01-04 and 
 01-05 and 01-07: passing worker acceptance and clean Gemini reviews; diffs inspected, awaiting 01-02-first integration. 01-04 started as ctx_052bb5219b06.
 
 01-05 final root review found double-close on failed init; bounded addendum prepared. Old successful report is not final acceptance. 01-06 started as ctx_89a020aa8df3.
+
+01-05 old attempt released (closed_agent_terminal). Same Task reopened ready for one-close correction; launch was refused locally by the five-agent capacity guard before any Dispatch was created. Waiting for a slot, not a startup retry/breaker failure.
