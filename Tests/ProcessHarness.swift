@@ -31,6 +31,9 @@ enum ProcessHarness {
         expect(early == "ready\n", "early stop must retain the matching complete line")
         expect(ProcessInfo.processInfo.systemUptime - earlyStart < 1.5, "early-stop cleanup must be bounded")
 
+        let partial = Shell.run("/bin/sh", ["-c", "printf ready; sleep 5"], timeout: 1) { $0.contains("ready") }
+        expect(partial == "ready", "generic early stop must support non-line output")
+
         let fdCount = (try? FileManager.default.contentsOfDirectory(atPath: "/dev/fd").count) ?? 0
         for _ in 0..<20 {
             _ = Shell.run("/bin/sh", ["-c", "printf x"], timeout: 1)

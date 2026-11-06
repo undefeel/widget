@@ -81,8 +81,7 @@ enum Shell {
                         readBudget -= n
                         if eofDeadline != nil { eofDeadline = ProcessInfo.processInfo.systemUptime + 0.35 }
                         buffer.append(contentsOf: chunk.prefix(n))
-                        if let stopWhen, buffer.contains(10),
-                           stopWhen(String(decoding: buffer, as: UTF8.self)) { matched = true; break }
+                        if let stopWhen, stopWhen(String(decoding: buffer, as: UTF8.self)) { matched = true; break }
                     } else if n == 0 { close(out.fileHandleForReading); readOpen = false; break }
                     else if errno == EINTR { continue }
                     else { if errno != EAGAIN && errno != EWOULDBLOCK { close(out.fileHandleForReading); readOpen = false }; break }
