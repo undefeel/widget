@@ -2,12 +2,12 @@
 
 Run: run_0007adffba77
 Stage: 01-review-refresh (approved)
-State: preparing approved audit and refresh Tasks
+State: audit completed; dispatching validated fixes
 
 ## Active
 
 <!-- active:start -->
-No active dispatches.
+- 01-01 | ctx_0ceb147c0f1e | gemini | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/Work/widget
 <!-- active:end -->
 
 ## Queue
@@ -42,3 +42,5 @@ unless the interface actually performed it.
 7. Update this file after each launch, merge and release. Before finishing an
    execution stage, the Run's `worker-list --terminal-state reclaimable` must be
    empty, or record the specific unresolved cleanup blocker.
+
+Audit 01-01 completed; ctx_0ceb147c0f1e released with closed_agent_terminal receipt.
