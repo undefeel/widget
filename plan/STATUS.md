@@ -8,7 +8,6 @@ State: 01-02 merged/pushed; integrating ready fixes; 01-08 notification correcti
 
 <!-- active:start -->
 - 01-01 | ctx_0ceb147c0f1e | gemini | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/Work/widget
-- 01-04 | ctx_052bb5219b06 | terra | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-04
 - 01-06 | ctx_89a020aa8df3 | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-06
 - 01-05 | ctx_42dfc61443df | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-05
 - 01-05 | ctx_419eaec053a6 | luna | 5d316412-736b-46fe-885e-79824b4fafce::/Users/kodoku/orca/workspaces/widget/t01-05
@@ -75,3 +74,5 @@ Merged 01-07; full acceptance passed. Release/cleanup still required.
 01-02 and 01-07 worker terminals released and merged child worktrees removed after confirming ancestry and discarding only helper-generated STATUS rows.
 01-08 completed as ctx_1ac40ed03b92: measured-usage regression and fresh Gemini pass; fixes 08ae596 / 4a88cd0. All implementation work settled; serial integration remains.
 Merge acceptance selection was corrected for macOS Bash 3.2 empty-array nounset behavior and the real shell/Git fixture now covers the full platform path with no optional flag.
+
+Merged 01-04; full acceptance passed. Release/cleanup still required.
