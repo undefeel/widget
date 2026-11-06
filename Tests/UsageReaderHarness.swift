@@ -1,6 +1,19 @@
 import Foundation
 import SQLite3
 
+var trackedCloseRequests = 0
+var effectiveCloseCalls = 0
+var trackCloseCalls = false
+
+@discardableResult
+func trackedSQLiteClose(_ db: OpaquePointer?) -> Int32 {
+    guard trackCloseCalls else { return sqlite3_close(db) }
+    trackedCloseRequests += 1
+    guard effectiveCloseCalls == 0 else { return SQLITE_MISUSE }
+    effectiveCloseCalls += 1
+    return sqlite3_close(db)
+}
+
 @main
 struct UsageReaderHarness {
     static func main() throws {
@@ -13,7 +26,7 @@ struct UsageReaderHarness {
         try opensLiteralFilename(in: root)
         try handlesMissingFile(in: root)
         try handlesBusyDatabase(in: root)
-        print("UsageReader WAL, literal-path, missing-file and busy-lock checks passed.")
+        print("UsageReader WAL, literal-path, missing-file close, and busy-lock checks passed.")
     }
 
     private static func checksWALVisibility(in root: URL) throws {
@@ -63,7 +76,14 @@ struct UsageReaderHarness {
 
     private static func handlesMissingFile(in root: URL) throws {
         let url = root.appendingPathComponent("missing.db")
+        trackedCloseRequests = 0
+        effectiveCloseCalls = 0
+        trackCloseCalls = true
         guard SQLiteReader(url) == nil else { throw failure("missing database unexpectedly opened") }
+        trackCloseCalls = false
+        guard trackedCloseRequests == 1, effectiveCloseCalls == 1 else {
+            throw failure("failed open requested \(trackedCloseRequests) closes; expected exactly one effective close")
+        }
         guard !FileManager.default.fileExists(atPath: url.path) else { throw failure("missing database was created") }
     }
 

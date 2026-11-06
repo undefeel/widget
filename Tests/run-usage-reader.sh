@@ -12,6 +12,7 @@ source = Path(sys.argv[1]).read_text()
 start = source.index("/// Чтение SQLite-базы только для чтения.")
 end = source.index("/// Минимальный разбор protobuf", start)
 reader = source[start:end].replace("private final class SQLiteReader", "final class SQLiteReader", 1)
+reader = reader.replace("sqlite3_close(db)", "trackedSQLiteClose(db)")
 Path(sys.argv[2]).write_text("import Foundation\nimport SQLite3\n\n" + reader)
 PY
 

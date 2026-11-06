@@ -196,13 +196,16 @@ private final class SQLiteReader {
         // characters such as ?, # and % in conversation filenames.
         guard sqlite3_open_v2(url.path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
             sqlite3_close(db)
+            db = nil
             return nil
         }
         // Bound waits when another process holds a conflicting SQLite lock.
         sqlite3_busy_timeout(db, 250)
     }
 
-    deinit { sqlite3_close(db) }
+    deinit {
+        if let db { sqlite3_close(db) }
+    }
 
     func each(_ sql: String, _ body: (Data) -> Void) {
         var st: OpaquePointer?
