@@ -21,8 +21,13 @@ git fetch origin
 git merge --ff-only origin/main
 git rev-parse --verify "$BRANCH^{commit}" >/dev/null
 git diff --stat "HEAD...$BRANCH"
+PRE_MERGE_HEAD="$(git rev-parse HEAD)"
 git merge --no-ff --no-edit "$BRANCH"
-if ! plan/tools/accept.sh; then
+ACCEPT_ARGS=()
+if git diff --quiet "$PRE_MERGE_HEAD" HEAD -- Sources Resources tools Tests build.sh; then
+  ACCEPT_ARGS=(--tools-only)
+fi
+if ! plan/tools/accept.sh "${ACCEPT_ARGS[@]}"; then
   echo 'Acceptance failed. Integration commit is local; inspect/fix it before pushing.' >&2
   exit 1
 fi

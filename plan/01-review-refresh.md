@@ -24,7 +24,7 @@ contracts is outside this performance fix unless the audit proves a separate bug
 | ID | Description | Ready when | Dependencies | Files | Level | Executor | Status | Orca task_id | dispatch_id |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 01-01 | Read-only whole-project audit, prioritize refresh, concurrency and process/protocol handling | Report contains reproducible blocker/major/minor findings and exact locations | Plan approval | All tracked files read-only; report recorded by orchestrator | L2 review | Gemini `gemini-3.8-flash-high` | done | task_785f694791f7 | ctx_0ceb147c0f1e (released) |
-| 01-02 | Decouple limits publication from token statistics and validate refresh races | Responsive limits path, independent guarded usage work, meaningful deterministic regressions, full acceptance and lead review | 01-01, plan approval | See exact Ownership in spec | L3 | terra lead + luna pieces | in_progress | task_01e9d8be1c52 | ctx_99d5e019e7a8 |
+| 01-02 | Decouple limits publication from token statistics and validate refresh races | Responsive limits path, independent guarded usage work, meaningful deterministic regressions, full acceptance and lead review | 01-01, plan approval | See exact Ownership in spec | L3 | terra lead + luna pieces | done | task_01e9d8be1c52 | ctx_99d5e019e7a8 (merged) |
 | 01-03 | Triage remaining audit findings into exact bounded fix specs | Each accepted finding is covered by 01-02 or an approved concrete fix spec; rejected findings have reasons | 01-01 | `plan/` only during triage | L1 planning | sol orchestrator | done | not created (planning only) | none |
 
 Do not create an executable catch-all fix Task for 01-03. Add exact tasks after
@@ -60,8 +60,8 @@ without an architecture change. See 01-01.review.md for every disposition.
 
 | ID | Description | Acceptance | Dependencies | Files | Level | Executor | Status | task_id | dispatch_id |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 01-04 | Safe process transport and JSON replies | Spec commands and review dispositions | 01-01 | Fetchers + Process harness | L3 | terra | in_progress | task_00283c688444 | ctx_052bb5219b06 |
-| 01-05 | WAL-aware read-only SQLite | Spec commands and review dispositions | 01-01 | Usage + UsageReader harness | L2 | luna | in_progress | task_3680b0de49d3 | ctx_42dfc61443df (correction; old attempt released) |
+| 01-04 | Safe process transport and JSON replies | Spec commands and review dispositions | 01-01 | Fetchers + Process harness | L3 | terra | review | task_00283c688444 | ctx_052bb5219b06 |
+| 01-05 | WAL-aware read-only SQLite | Spec commands and review dispositions | 01-01 | Usage + UsageReader harness | L2 | luna | review | task_3680b0de49d3 | ctx_419eaec053a6 (reconciled) |
 | 01-06 | Truthful reset notifications and dedupe | Spec commands and review dispositions | 01-01 | Services + locales + Notification harness | L2 | luna | in_progress | task_5c27e42e6aa0 | ctx_89a020aa8df3 |
 | 01-07 | Race-safe watchdog observation | Spec commands and review dispositions | 01-01 | orchestrate.py + test_tools.py | L2 | luna | review | task_e31c44a002be | ctx_b92860eb293a |
 

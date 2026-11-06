@@ -2,7 +2,7 @@
 
 Run: run_0007adffba77
 Stage: 01-review-refresh (approved)
-State: 01-07 accepted; 01-05 held for final ownership correction; 01-02 and 01-04 leads running
+State: 01-02 merged/pushed; integrating ready fixes; 01-08 notification correction running
 
 ## Active
 
@@ -68,3 +68,5 @@ SQLite follow-up reconciled: task_23f64509577c / ctx_0bd2a6e449f1 implemented 7a
 01-02 completed and accepted for integration: controlled 7 ms publication with statistics held, full worker acceptance and Gemini/lead review passed.
 
 Merged 01-02; full acceptance passed. Release/cleanup still required.
+
+01-02 integration acceptance passed and pushed at 23d6871. Merge helper now selects portable-only acceptance for coordination-only diffs, as required by the platform-target policy; app/resource/test changes still get full macOS acceptance.
