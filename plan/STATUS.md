@@ -59,3 +59,6 @@ Wave 1 launched: refresh lead, WAL reader fix and watchdog fix. Next: 01-04 and 
 01-05 old attempt released (closed_agent_terminal). Same Task reopened ready for one-close correction; launch was refused locally by the five-agent capacity guard before any Dispatch was created. Waiting for a slot, not a startup retry/breaker failure.
 
 01-05 correction launched as ctx_42dfc61443df in the existing t01-05 worktree after capacity handoff. Old ctx_6f9f96cdcdec is released; no startup retry chain was used.
+
+01-05 ctx_42dfc61443df reverified old scope without applying the mandatory addendum. This is an addendum-delivery/spec synchronization failure, not a second implementation failure. Synchronize the current plan/addendum/AGENTS into the existing worktree before relaunch; do not count old review artifacts as fresh certification.
+01-04 and 01-06 reported complete with passing acceptance and Gemini dispositions; awaiting integration.

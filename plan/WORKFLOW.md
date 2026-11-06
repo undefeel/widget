@@ -151,3 +151,5 @@ New Task specs are immutable. Put scope corrections/fix instructions in
 `plan/specs/<ID>.addendum.md`, commit, and retry the same Task with the addendum.
 Wrong specs and missing ownership are specification errors, not execution
 failures. Track actual red acceptance/rejected review failures separately.
+
+Before a retry into an existing worktree, synchronize the current task spec and addendum as plan-only commits in that checkout. Confirm its AGENTS contract requires reading local addenda before work. A queued post-start send alone is insufficient proof that the correction entered the implementation context; require explicit disposition in the report. Preserve old runtime receipts, but archive a stale helper-Run cache before launching a new agent in the same checkout.
