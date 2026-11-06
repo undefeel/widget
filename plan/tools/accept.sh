@@ -17,7 +17,7 @@ check() {
 }
 check git diff --check
 check git diff --cached --check
-for script in build.sh plan/tools/*.sh; do
+for script in build.sh plan/tools/*.sh Tests/run-*.sh; do
   check bash -n "$script"
 done
 check python3 -m unittest discover -s plan/tools -p 'test_*.py'
@@ -33,5 +33,8 @@ for resource in Resources/*.plist Resources/*.entitlements Resources/*/*.strings
   check plutil -lint "$resource"
 done
 check ./build.sh
+for script in Tests/run-*.sh; do
+  check "$script"
+done
 check codesign --verify --deep --strict build/AILimits.app
 echo 'Full acceptance passed (universal app and widget; signatures verified).'

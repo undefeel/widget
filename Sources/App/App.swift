@@ -25,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: NSWindow?
     private let hotKey = HotKey()
     private var bag = Set<AnyCancellable>()
+    private var lastMenuBarRenderKey: MenuBarRenderKey?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         store = LimitsStore()
@@ -61,8 +62,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func updateIcon() {
         guard let b = statusItem?.button else { return }
         let dark = b.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        b.image = MenuBarRenderer.image(snapshot: store.snapshot, now: store.now, visible: Pref.visibleProviders,
-                                        compact: UserDefaults.standard.bool(forKey: Pref.compact), dark: dark)
+        let snapshot = store.snapshot
+        let visible = Pref.visibleProviders
+        let compact = UserDefaults.standard.bool(forKey: Pref.compact)
+        let shown = visible.isEmpty ? Provider.allCases : visible
+        let key = MenuBarRenderKey(paused: snapshot.paused != nil, visible: visible,
+                                   compact: compact, dark: dark,
+                                   headlines: shown.map { snapshot.status($0).headline(at: store.now) })
+        guard key != lastMenuBarRenderKey else { return }
+        // Record before rendering so reentrant snapshot notifications cannot
+        // trigger duplicate image work for the same visible state.
+        lastMenuBarRenderKey = key
+        b.image = MenuBarRenderer.image(snapshot: snapshot, now: store.now, visible: visible,
+                                        compact: compact, dark: dark)
     }
 
     private func syncHotKey() {
@@ -147,6 +159,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         settingsWindow?.makeKeyAndOrderFront(nil)
     }
+}
+
+private struct MenuBarRenderKey: Equatable {
+    let paused: Bool
+    let visible: [Provider]
+    let compact: Bool
+    let dark: Bool
+    let headlines: [Double?]
 }
 
 /// Состояние панели: какая страница открыта и что показать в подвале.
