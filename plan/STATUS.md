@@ -78,3 +78,5 @@ Merged 01-04; full acceptance passed. Release/cleanup still required.
 01-04 merged and integration acceptance passed at 8b28dfc (22 tooling tests, process and refresh harnesses, universal app/widget and signatures).
 
 Merged 01-05; full acceptance passed. Release/cleanup still required.
+
+01-05 integration passed and pushed at d6f8147 (22 tooling tests, process, refresh and WAL/one-close/busy reader harnesses, universal app/widget/signatures). Current verifier ctx_419eaec053a6 is already_released; earlier follow-up ctx_0bd2a6e449f1 was explicitly closed. 01-04 released and its merged worktree removed.
