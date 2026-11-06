@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import stat
 import sys
 import tempfile
 import time
@@ -389,6 +390,36 @@ def idle_proven(observation):
         return False
 
 
+def observe_workspace(path):
+    """Return a stable filesystem marker, or None if any part was unreadable."""
+    excluded = {'.git', 'build', '.runtime', '__pycache__'}
+    latest = 0
+    pending = [path]
+    try:
+        root_stat = path.lstat()
+        if not stat.S_ISDIR(root_stat.st_mode):
+            return None
+        latest = root_stat.st_mtime_ns
+        while pending:
+            directory = pending.pop()
+            with os.scandir(directory) as entries:
+                for entry in entries:
+                    if entry.name in excluded:
+                        continue
+                    entry_stat = entry.stat(follow_symlinks=False)
+                    latest = max(latest, entry_stat.st_mtime_ns)
+                    if entry.is_dir(follow_symlinks=False):
+                        pending.append(Path(entry.path))
+    except OSError:
+        return None
+    return latest
+
+
+def clear_observation(record):
+    record.pop('fingerprint', None)
+    record.pop('unchangedSince', None)
+
+
 def watchdog():
     """Nudge only: never stop/release/restart a worker on silence."""
     with locked():
@@ -402,15 +433,18 @@ def watchdog():
             workspace = show(record['dispatchId']).get('workspace') or ''
             # Native receipts encode the path after repo-id::; never guess a checkout.
             if '::' not in workspace:
+                clear_observation(record)
+                save_record(record)
                 continue
             path = Path(workspace.split('::', 1)[1])
-            if not path.is_dir():
+            observed = observe_workspace(path)
+            if observed is None:
+                clear_observation(record)
+                save_record(record)
                 continue
             mark = run(['git', 'status', '--porcelain'], cwd=path).stdout
             head = git('rev-parse', 'HEAD', cwd=path)
-            changed = max([path.stat().st_mtime] + [p.stat().st_mtime for p in path.rglob('*')
-                           if p.is_file() and not {'.git', 'build', '.runtime', '__pycache__'}.intersection(p.parts)])
-            fingerprint = (mark, head, changed)
+            fingerprint = (mark, head, observed)
             previous = record.get('fingerprint')
             if previous != list(fingerprint):
                 record['fingerprint'] = list(fingerprint)
