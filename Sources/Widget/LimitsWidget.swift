@@ -40,11 +40,45 @@ extension Snapshot {
                 LimitWindow(name: "Gemini 3 Pro", usedPercent: 80, resetsAt: now.addingTimeInterval(5000)),
                 LimitWindow(name: "Claude Sonnet", usedPercent: 20, resetsAt: now.addingTimeInterval(5000)),
             ], updatedAt: now),
-        ], generatedAt: now)
+        ], generatedAt: now, cheapVibe: BalanceStatus(tokens: 173_400_000, updatedAt: now, error: nil))
     }
 }
 
 // MARK: - Views
+
+private struct BalanceFooter: View {
+    let balance: BalanceStatus?
+    let now: Date
+    var compact = false
+
+    var body: some View {
+        if let tokens = balance?.tokens {
+            let amount = compact ? Fmt.tokens(tokens) : LF("Остаток: %@", Fmt.tokens(tokens))
+            let accessibilityLabel = "\(L("Токены CheapVibeCode")): \(amount)"
+            let details = [balance?.error.map(L),
+                           balance?.updatedAt.map { Fmt.ago($0, now: now) }]
+                .compactMap { $0 }.joined(separator: " · ")
+            HStack(spacing: 4) {
+                Image(systemName: "creditcard.fill")
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                Text("CheapVibeCode")
+                    .font(.system(size: 9, weight: .semibold))
+                    .lineLimit(1)
+                Spacer(minLength: 2)
+                Text(amount)
+                    .font(.system(size: 9).monospacedDigit())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(accessibilityLabel)
+            .accessibilityHint(details)
+            .help(details)
+        }
+    }
+}
 
 struct LimitsWidgetView: View {
     @Environment(\.widgetFamily) private var family
@@ -87,7 +121,7 @@ private struct SmallView: View {
     let now: Date
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("Агенты").font(.system(size: 12, weight: .bold)).foregroundStyle(.secondary)
             ForEach(Provider.allCases) { p in
                 let h = snapshot.status(p).headline(at: now)
@@ -101,6 +135,10 @@ private struct SmallView: View {
                     LimitBar(used: h ?? 0, tint: p.tint)
                 }
             }
+            if snapshot.cheapVibe?.tokens != nil {
+                Divider()
+                BalanceFooter(balance: snapshot.cheapVibe, now: now, compact: true)
+            }
             Spacer(minLength: 0)
         }
     }
@@ -111,24 +149,30 @@ private struct MediumView: View {
     let now: Date
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            ForEach(Provider.allCases) { p in
-                let s = snapshot.status(p)
-                VStack(spacing: 5) {
-                    LimitRing(used: s.headline(at: now), tint: p.tint, size: 66)
-                    Text(p.title).font(.system(size: 12, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
-                    Text(s.windows.isEmpty ? (s.error ?? L("нет данных"))
-                         : s.windows.prefix(2).map { "\(Fmt.windowShort($0.name)) \(Fmt.percent($0.effectiveUsed(at: now)))" }
-                            .joined(separator: " · "))
-                        .font(.system(size: 9).monospacedDigit())
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(2)
+        VStack(spacing: 6) {
+            HStack(alignment: .top, spacing: 8) {
+                ForEach(Provider.allCases) { p in
+                    let s = snapshot.status(p)
+                    VStack(spacing: 5) {
+                        LimitRing(used: s.headline(at: now), tint: p.tint, size: 66)
+                        Text(p.title).font(.system(size: 12, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
+                        Text(s.windows.isEmpty ? (s.error ?? L("нет данных"))
+                             : s.windows.prefix(2).map { "\(Fmt.windowShort($0.name)) \(Fmt.percent($0.effectiveUsed(at: now)))" }
+                                .joined(separator: " · "))
+                            .font(.system(size: 9).monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: .infinity)
+            }
+            .frame(maxHeight: .infinity)
+            if snapshot.cheapVibe?.tokens != nil {
+                Divider()
+                BalanceFooter(balance: snapshot.cheapVibe, now: now)
             }
         }
-        .frame(maxHeight: .infinity)
     }
 }
 
@@ -171,17 +215,26 @@ private struct LargeView: View {
                     }
                 }
             }
-            Spacer(minLength: 0)
-            if let u = snapshot.usage, u.total > 0 {
+            let hasBalance = snapshot.cheapVibe?.tokens != nil
+            let usage = snapshot.usage.flatMap { $0.total > 0 ? $0 : nil }
+            if hasBalance || usage != nil {
+                Spacer(minLength: 0)
                 Divider()
-                HStack(spacing: 6) {
-                    Image(systemName: "chart.xyaxis.line")
-                    Text([LF("%@ токенов за неделю", Fmt.tokens(u.total)), u.top.map { LF("чаще всего %@", $0.model) }]
-                        .compactMap { $0 }.joined(separator: " · "))
-                        .lineLimit(1)
+                VStack(alignment: .leading, spacing: 4) {
+                    if hasBalance {
+                        BalanceFooter(balance: snapshot.cheapVibe, now: now)
+                    }
+                    if let u = usage {
+                        HStack(spacing: 6) {
+                            Image(systemName: "chart.xyaxis.line")
+                            Text([LF("%@ токенов за неделю", Fmt.tokens(u.total)), u.top.map { LF("чаще всего %@", $0.model) }]
+                                .compactMap { $0 }.joined(separator: " · "))
+                                .lineLimit(1)
+                        }
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                    }
                 }
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
             }
         }
     }
@@ -226,7 +279,7 @@ struct LimitsWidget: Widget {
             LimitsWidgetView(entry: entry)
         }
         .configurationDisplayName("Лимиты AI")
-        .description("Использование лимитов Claude, Codex и Antigravity.")
+        .description(L("Лимиты Claude, Codex и Antigravity и баланс CheapVibeCode."))
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }

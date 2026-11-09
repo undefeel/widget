@@ -2,12 +2,13 @@ import ServiceManagement
 import SwiftUI
 
 enum SettingsPane: String, CaseIterable, Identifiable {
-    case agents, notifications, general
+    case agents, balance, notifications, general
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .agents: return L("Агенты")
+        case .balance: return L("Баланс")
         case .notifications: return L("Уведомления")
         case .general: return L("Основные")
         }
@@ -16,6 +17,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .agents: return "chart.bar.fill"
+        case .balance: return "creditcard.fill"
         case .notifications: return "bell.badge.fill"
         case .general: return "gearshape.fill"
         }
@@ -24,6 +26,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     var color: Color {
         switch self {
         case .agents: return .blue
+        case .balance: return .green
         case .notifications: return .red
         case .general: return .gray
         }
@@ -51,6 +54,7 @@ struct SettingsView: View {
         } detail: {
             switch paneBox.value {
             case .agents: AgentsPane()
+            case .balance: BalancePane()
             case .notifications: NotificationsPane()
             case .general: GeneralPane()
             }
@@ -115,6 +119,76 @@ private struct AgentsPane: View {
         guard let paths = pathsBox.value else { return "…" }
         guard let path = paths[p] else { return L("\(p.command) CLI не найден") }
         return path.replacingOccurrences(of: SnapshotIO.realHome.path, with: "~")
+    }
+}
+
+// MARK: - Баланс
+
+/// Ввод API-ключа CheapVibeCode. Сохранённый ключ никогда не загружается
+/// обратно в поле — панель проверяет только факт его наличия в Keychain.
+private struct BalancePane: View {
+    @EnvironmentObject private var store: LimitsStore
+    @StateObject private var keyBox = StateBox("")
+    @StateObject private var hasKeyBox = StateBox(false)
+
+    var body: some View {
+        Form {
+            Section {
+                SecureField("API-ключ", text: $keyBox.value)
+                HStack {
+                    Button("Сохранить") { save() }
+                        .disabled(keyBox.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    Button("Удалить") { deleteKey() }
+                    Spacer()
+                    Text(hasKeyBox.value ? L("Ключ сохранён") : L("Ключ не задан"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if let balance = store.snapshot.cheapVibe, balance.tokens != nil || balance.error != nil {
+                Section {
+                    if let tokens = balance.tokens {
+                        LabeledContent(LF("Остаток: %@", Fmt.tokens(tokens))) {
+                            Text(Fmt.ago(balance.updatedAt, now: store.now))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    if let error = balance.error {
+                        Label(L(error), systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                }
+            }
+            Section {
+                Link("Открыть кабинет CheapVibeCode", destination: URL(string: "https://cheapvibecode.ru/portal/dashboard")!)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Хранится в macOS Keychain; в snapshot.json и логи не попадает.")
+                    Text("Обновляется каждые 5 мин независимо от VPN.")
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .task {
+            hasKeyBox.value = await Task.detached { CheapVibeKeychain.hasKey() }.value
+        }
+    }
+
+    private func save() {
+        let trimmed = keyBox.value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        CheapVibeKeychain.save(trimmed)
+        keyBox.value = ""
+        hasKeyBox.value = CheapVibeKeychain.hasKey()
+        store.balanceCredentialsChanged()
+    }
+
+    private func deleteKey() {
+        CheapVibeKeychain.delete()
+        hasKeyBox.value = CheapVibeKeychain.hasKey()
+        store.balanceCredentialsChanged()
     }
 }
 

@@ -85,6 +85,8 @@ private struct MainPanel: View {
                 .section()
             }
 
+            BalanceSection()
+
             ForEach(Provider.allCases) { p in
                 ProviderSection(status: store.snapshot.status(p), now: store.now)
             }
@@ -179,6 +181,61 @@ private struct SummaryRow: View {
             out.append(LF("Ближайший сброс: %@ через %@", n.0.title, Fmt.duration(n.1.timeIntervalSince(now))))
         }
         return out
+    }
+}
+
+/// Карточка баланса CheapVibeCode: бренд, компактный остаток, возраст и ошибка.
+private struct BalanceSection: View {
+    @EnvironmentObject private var store: LimitsStore
+
+    private var balance: BalanceStatus? { store.snapshot.cheapVibe }
+
+    var body: some View {
+        if let balance, balance.tokens != nil || balance.error != nil {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Image(systemName: "creditcard.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.green)
+                    Text("CheapVibeCode").fontWeight(.bold).foregroundStyle(.primary)
+                    Spacer(minLength: 4)
+                    if let tokens = balance.tokens {
+                        Text(LF("Остаток: %@", Fmt.tokens(tokens)))
+                            .font(.callout.monospacedDigit().weight(.semibold))
+                            .lineLimit(1)
+                    }
+                }
+                if let error = balance.error {
+                    Label(L(error), systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .lineLimit(2)
+                } else if let updatedAt = balance.updatedAt {
+                    Text(Fmt.ago(updatedAt, now: store.now))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            .section()
+            .accessibilityElement(children: .combine)
+            .help(helpText(balance))
+        }
+    }
+
+    /// Точная сумма с группировкой разрядов и, при наличии, ошибка/возраст.
+    private func helpText(_ balance: BalanceStatus) -> String {
+        var parts: [String] = []
+        if let tokens = balance.tokens {
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .decimal
+            if let exact = formatter.string(from: NSNumber(value: tokens)) {
+                parts.append(LF("Остаток: %@", exact))
+            }
+        }
+        if let error = balance.error { parts.append(L(error)) }
+        if let updatedAt = balance.updatedAt { parts.append(Fmt.ago(updatedAt, now: store.now)) }
+        return parts.joined(separator: " · ")
     }
 }
 

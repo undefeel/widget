@@ -117,3 +117,23 @@
 "Всего за 5 недель" = "Last 5 weeks";
 "В среднем за неделю" = "Weekly average";
 "Пиковая неделя" = "Peak week";
+
+/* CheapVibeCode */
+"Баланс" = "Balance";
+"Остаток: %@" = "Balance: %@";
+"Ключ CheapVibeCode не задан" = "CheapVibeCode API key is not set";
+"Ключ CheapVibeCode недействителен" = "CheapVibeCode API key is invalid";
+"CheapVibeCode ограничил частоту запросов" = "CheapVibeCode rate limit reached";
+"Нет связи с CheapVibeCode" = "Cannot reach CheapVibeCode";
+"Некорректный ответ CheapVibeCode" = "Invalid CheapVibeCode response";
+"CheapVibeCode вернул ошибку %d" = "CheapVibeCode returned error %d";
+"API-ключ" = "API key";
+"Сохранить" = "Save";
+"Удалить" = "Delete";
+"Ключ сохранён" = "Key saved";
+"Ключ не задан" = "No key set";
+"Открыть кабинет CheapVibeCode" = "Open CheapVibeCode dashboard";
+"Хранится в macOS Keychain; в snapshot.json и логи не попадает." = "Stored in macOS Keychain; never written to snapshot.json or logs.";
+"Обновляется каждые 5 мин независимо от VPN." = "Refreshes every 5 min regardless of VPN.";
+"Токены CheapVibeCode" = "CheapVibeCode tokens";
+"Лимиты Claude, Codex и Antigravity и баланс CheapVibeCode." = "Claude, Codex and Antigravity limits plus the CheapVibeCode balance.";

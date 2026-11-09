@@ -28,6 +28,17 @@ enum AntigravityFetcher {
 
 enum UsageScanner { static func scan() -> UsageStats? { nil } }
 
+enum CheapVibeKeychain {
+    static func hasKey() -> Bool { false }
+    static func load() -> String? { nil }
+    static func save(_ key: String) {}
+    static func delete() {}
+}
+
+enum CheapVibeClient {
+    static func fetch() async -> CheapVibeFetchResult { .notConfigured }
+}
+
 @MainActor final class Notifier {
     static let shared = Notifier()
     func check(prev: Snapshot, next: Snapshot) {}
@@ -82,7 +93,9 @@ private struct Captures {
     vpnWork: (@Sendable () -> Bool)? = nil,
     usageWork: @escaping @Sendable () -> UsageStats? = { usage(7) },
     fetchWork: @escaping @Sendable (Provider) -> Result<ProviderStatus, FetchError>? = { .success(status($0, 23)) },
-    fallbackWork: @escaping @Sendable (Provider) -> ProviderStatus? = { _ in nil }
+    fallbackWork: @escaping @Sendable (Provider) -> ProviderStatus? = { _ in nil },
+    balanceConfigured: @escaping @Sendable () -> Bool = { false },
+    balanceWork: @escaping @Sendable () async -> CheapVibeFetchResult = { .notConfigured }
 ) -> (LimitsStore, Captures) {
     let reads = Locked<[String: Int]>([:])
     let saves = Locked<[Snapshot]>([])
@@ -93,6 +106,8 @@ private struct Captures {
         fetch: { provider in reads.mutate { $0["fetch-\(provider.rawValue)", default: 0] += 1 }; return fetchWork(provider) },
         fallback: { provider in reads.mutate { $0["fallback-\(provider.rawValue)", default: 0] += 1 }; return fallbackWork(provider) },
         usage: { reads.mutate { $0["usage", default: 0] += 1 }; return usageWork() },
+        balanceConfigured: balanceConfigured,
+        balance: balanceWork,
         save: { snapshot in saves.mutate { $0.append(snapshot) } },
         notify: { _, _ in notifications.mutate { $0 += 1 } },
         reloadWidgets: { reloads.mutate { $0 += 1 } }
@@ -308,6 +323,95 @@ private struct Captures {
                  "newer VPN pause was not widget-visible")
 }
 
+@MainActor private func testBalanceRunsWhenVPNIsOff() async {
+    let vpn = Locked(false)
+    let balanceCalls = Locked(0)
+    let (store, captures) = makeStore(vpn: vpn,
+        balanceConfigured: { true },
+        balanceWork: {
+            balanceCalls.mutate { $0 += 1 }
+            return .success(tokens: 12345)
+        })
+
+    await store.refresh(force: true)
+    await eventually("VPN-off balance publication") {
+        store.snapshot.cheapVibe?.tokens == 12345 && store.snapshot.paused == LimitsStore.vpnOffMessage
+    }
+    precondition(balanceCalls.read { $0 } == 1, "VPN-off refresh did not fetch balance")
+    precondition(captures.reads.read { $0.keys.allSatisfy { !$0.hasPrefix("fetch-") && $0 != "usage" } },
+                 "VPN-off refresh started provider or history reads")
+    precondition(store.snapshot.paused == LimitsStore.vpnOffMessage,
+                 "VPN pause was not preserved alongside balance")
+}
+
+@MainActor private func testHeldBalanceDoesNotBlockLimitsOrDuplicate() async {
+    let balanceGate = Gate("balance")
+    let balanceCalls = Locked(0)
+    let (store, captures) = makeStore(
+        balanceConfigured: { true },
+        balanceWork: {
+            balanceCalls.mutate { $0 += 1 }
+            balanceGate.enterAndWait()
+            return .success(tokens: 678)
+        })
+    let first = Task { await store.refresh(force: true) }
+    await eventually("balance request start") { balanceCalls.read { $0 == 1 } }
+    balanceGate.waitUntilStarted()
+    await eventually("limits publication beside balance") {
+        store.snapshot.status(.claude).headline() == 23
+    }
+    precondition(!store.isRefreshing, "held balance kept limits refresh active")
+
+    await store.refresh(force: true)
+    precondition(balanceCalls.read { $0 } == 1, "duplicate refresh started a second balance request")
+    precondition(captures.reads.read { $0["fetch-claude", default: 0] >= 1 },
+                 "limits did not run beside held balance")
+    balanceGate.release()
+    await first.value
+    await eventually("balance completion") { store.snapshot.cheapVibe?.tokens == 678 }
+}
+
+@MainActor private func testBalanceFailureAndCredentialInvalidation() async {
+    let key = Locked(true)
+    let balanceGate = Gate("stale balance")
+    let balanceCalls = Locked(0)
+    let (store, captures) = makeStore(
+        balanceConfigured: { key.read { $0 } },
+        balanceWork: {
+            let call = balanceCalls.mutate { count -> Int in count += 1; return count }
+            switch call {
+            case 1: return .success(tokens: 500)
+            case 2: return .failure(.network)
+            default:
+                balanceGate.enterAndWait()
+                return .success(tokens: 999)
+            }
+        })
+
+    await store.refresh(force: true)
+    await eventually("initial balance success") { store.snapshot.cheapVibe?.tokens == 500 }
+    let updatedAt = store.snapshot.cheapVibe?.updatedAt
+    await store.refresh(force: true)
+    await eventually("balance failure publication") { store.snapshot.cheapVibe?.error == "Нет связи с CheapVibeCode" }
+    precondition(store.snapshot.cheapVibe?.tokens == 500,
+                 "balance failure discarded the last successful tokens")
+    precondition(store.snapshot.cheapVibe?.updatedAt == updatedAt,
+                 "balance failure changed the last successful timestamp")
+
+    let staleRefresh = Task { await store.refresh(force: true) }
+    await eventually("stale balance request start") { balanceCalls.read { $0 == 3 } }
+    balanceGate.waitUntilStarted()
+    key.mutate { $0 = false }
+    store.balanceCredentialsChanged()
+    precondition(store.snapshot.cheapVibe == nil, "removing the key did not clear balance")
+    precondition(captures.reloads.read { $0 } > 0, "key removal did not reload widgets")
+    balanceGate.release()
+    await staleRefresh.value
+    await eventually("stale balance discard") { store.snapshot.cheapVibe == nil }
+    precondition(captures.saves.read { $0.last?.cheapVibe == nil },
+                 "cleared balance was not persisted")
+}
+
 @main struct RefreshHarness {
     @MainActor static func main() async {
         let skipIncrementalProvider = CommandLine.arguments.dropFirst().contains("--skip-incremental-provider")
@@ -319,6 +423,9 @@ private struct Captures {
         await testVPNFenceAndPersistedState()
         await testFallbackAndUnchangedPayload()
         await testStaleAllowedGateCannotStartWork()
+        await testBalanceRunsWhenVPNIsOff()
+        await testHeldBalanceDoesNotBlockLimitsOrDuplicate()
+        await testBalanceFailureAndCredentialInvalidation()
         if !skipIncrementalProvider { await testFastProviderBeforeSlowProviderAndUsage() }
         print("refresh harness passed")
     }

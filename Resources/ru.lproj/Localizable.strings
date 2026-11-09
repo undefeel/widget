@@ -118,3 +118,23 @@
 "Всего за 5 недель" = "Всего за 5 недель";
 "В среднем за неделю" = "В среднем за неделю";
 "Пиковая неделя" = "Пиковая неделя";
+
+/* CheapVibeCode */
+"Баланс" = "Баланс";
+"Остаток: %@" = "Остаток: %@";
+"Ключ CheapVibeCode не задан" = "Ключ CheapVibeCode не задан";
+"Ключ CheapVibeCode недействителен" = "Ключ CheapVibeCode недействителен";
+"CheapVibeCode ограничил частоту запросов" = "CheapVibeCode ограничил частоту запросов";
+"Нет связи с CheapVibeCode" = "Нет связи с CheapVibeCode";
+"Некорректный ответ CheapVibeCode" = "Некорректный ответ CheapVibeCode";
+"CheapVibeCode вернул ошибку %d" = "CheapVibeCode вернул ошибку %d";
+"API-ключ" = "API-ключ";
+"Сохранить" = "Сохранить";
+"Удалить" = "Удалить";
+"Ключ сохранён" = "Ключ сохранён";
+"Ключ не задан" = "Ключ не задан";
+"Открыть кабинет CheapVibeCode" = "Открыть кабинет CheapVibeCode";
+"Хранится в macOS Keychain; в snapshot.json и логи не попадает." = "Хранится в macOS Keychain; в snapshot.json и логи не попадает.";
+"Обновляется каждые 5 мин независимо от VPN." = "Обновляется каждые 5 мин независимо от VPN.";
+"Токены CheapVibeCode" = "Токены CheapVibeCode";
+"Лимиты Claude, Codex и Antigravity и баланс CheapVibeCode." = "Лимиты Claude, Codex и Antigravity и баланс CheapVibeCode.";

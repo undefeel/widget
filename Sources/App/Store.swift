@@ -9,6 +9,8 @@ struct RefreshOperations {
     var fetch: (Provider) -> Result<ProviderStatus, FetchError>?
     var fallback: (Provider) -> ProviderStatus?
     var usage: () -> UsageStats?
+    var balanceConfigured: () -> Bool
+    var balance: () async -> CheapVibeFetchResult
     var save: (Snapshot) -> Void
     var notify: @MainActor (Snapshot, Snapshot) -> Void
     var reloadWidgets: () -> Void
@@ -33,6 +35,8 @@ struct RefreshOperations {
                 }
             },
             usage: { UsageScanner.scan() },
+            balanceConfigured: { CheapVibeKeychain.hasKey() },
+            balance: { await CheapVibeClient.fetch() },
             save: { SnapshotIO.save($0) },
             notify: { Notifier.shared.check(prev: $0, next: $1) },
             reloadWidgets: { WidgetCenter.shared.reloadAllTimelines() }
@@ -54,6 +58,10 @@ final class LimitsStore: ObservableObject {
     private var usageInFlight = false
     /// Every observed VPN block fences all results started before that block.
     private var generation: UInt64 = 0
+    private var lastBalanceAttempt: Date?
+    private var balanceGeneration: UInt64 = 0
+    private var balanceInFlightGeneration: UInt64?
+    private var balanceTask: Task<Void, Never>?
     private var timer: Timer?
     private let operations: RefreshOperations
 
@@ -63,6 +71,8 @@ final class LimitsStore: ObservableObject {
     private let tickInterval: TimeInterval = 15
     /// Статистика токенов по логам.
     private let usageInterval: TimeInterval = 900
+    /// Как часто проверять баланс CheapVibeCode (секунды).
+    private let balanceInterval: TimeInterval = 300
     /// Ускоренный опрос, когда до порога меньше 15 пунктов.
     private let fastInterval: TimeInterval = 90
 
@@ -97,6 +107,7 @@ final class LimitsStore: ObservableObject {
 
     /// `force` affects provider limits only. Statistics run at their own due time.
     func refresh(force: Bool = false) async {
+        startBalanceIfDue(force: force)
         defer { now = Date() }
 
         guard await vpnPermitted() else {
@@ -144,6 +155,80 @@ final class LimitsStore: ObservableObject {
         isRefreshing = false
         if requestGeneration != generation {
             for provider in dueProviders { lastAttempt[provider] = nil }
+        }
+    }
+
+    private func startBalanceIfDue(force: Bool) {
+        guard balanceInFlightGeneration == nil,
+              operations.balanceConfigured() else { return }
+        let now = Date()
+        guard force || lastBalanceAttempt.map({ now.timeIntervalSince($0) >= balanceInterval }) ?? true else {
+            return
+        }
+
+        let requestGeneration = balanceGeneration
+        lastBalanceAttempt = now
+        balanceInFlightGeneration = requestGeneration
+        let balanceOperation = operations.balance
+        balanceTask = Task.detached { [weak self] in
+            let result = await balanceOperation()
+            await self?.finishBalance(result, generation: requestGeneration)
+        }
+    }
+
+    /// Called by Settings after saving, replacing, or deleting the Keychain key.
+    func balanceCredentialsChanged() {
+        balanceGeneration &+= 1
+        balanceTask?.cancel()
+        balanceTask = nil
+        balanceInFlightGeneration = nil
+        lastBalanceAttempt = nil
+
+        guard operations.balanceConfigured() else {
+            var next = snapshot
+            next.cheapVibe = nil
+            let changed = next.cheapVibe != snapshot.cheapVibe
+            publish(next)
+            if !changed { operations.reloadWidgets() }
+            return
+        }
+        startBalanceIfDue(force: true)
+    }
+
+    private func finishBalance(_ result: CheapVibeFetchResult, generation resultGeneration: UInt64) {
+        guard resultGeneration == balanceGeneration,
+              balanceInFlightGeneration == resultGeneration else { return }
+        balanceInFlightGeneration = nil
+        balanceTask = nil
+
+        // Merge against the current snapshot after the await so provider, usage,
+        // or VPN publications made while the request was running are retained.
+        var next = snapshot
+        switch result {
+        case .success(let tokens):
+            next.cheapVibe = BalanceStatus(tokens: tokens, updatedAt: Date(), error: nil)
+        case .failure(let failure):
+            var balance = next.cheapVibe ?? BalanceStatus(tokens: nil, updatedAt: nil, error: nil)
+            balance.error = balanceError(failure)
+            next.cheapVibe = balance
+        case .notConfigured:
+            // Explicit key deletion clears the balance through
+            // balanceCredentialsChanged(). A transient Keychain failure must not
+            // erase the last successful value.
+            return
+        case .cancelled:
+            return
+        }
+        publish(next)
+    }
+
+    private func balanceError(_ failure: CheapVibeFailure) -> String {
+        switch failure {
+        case .unauthorized: return "Ключ CheapVibeCode недействителен"
+        case .rateLimited: return "CheapVibeCode ограничил частоту запросов"
+        case .network: return "Нет связи с CheapVibeCode"
+        case .invalidResponse: return "Некорректный ответ CheapVibeCode"
+        case .http(let code): return LF("CheapVibeCode вернул ошибку %d", code)
         }
     }
 
@@ -240,9 +325,12 @@ final class LimitsStore: ObservableObject {
     private func publish(_ candidate: Snapshot) {
         let previous = snapshot
         guard candidate.providers != previous.providers || candidate.paused != previous.paused ||
-                candidate.usage != previous.usage else { return }
+                candidate.usage != previous.usage || candidate.cheapVibe != previous.cheapVibe else { return }
         var next = candidate
-        next.generatedAt = Date()
+        let limitsChanged = candidate.providers != previous.providers || candidate.paused != previous.paused ||
+            candidate.usage != previous.usage
+        if limitsChanged { next.generatedAt = Date() }
+        else { next.generatedAt = previous.generatedAt }
         snapshot = next
         operations.save(next)
         operations.notify(previous, next)

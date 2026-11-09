@@ -108,12 +108,67 @@ struct UsageStats: Codable, Equatable {
     var top: ModelUsage? { models.filter { $0.weekTotal > 0 }.max { $0.weekTotal < $1.weekTotal } }
 }
 
+struct BalanceStatus: Codable, Equatable {
+    /// Last successful value. Kept when a later request fails.
+    var tokens: Int?
+    var updatedAt: Date?
+    /// Localization key for the last failure, cleared on success.
+    var error: String?
+}
+
+enum CheapVibeFailure {
+    case unauthorized
+    case rateLimited
+    case network
+    case invalidResponse
+    case http(Int)
+}
+
+enum CheapVibeFetchResult {
+    case success(tokens: Int)
+    case notConfigured
+    case failure(CheapVibeFailure)
+    case cancelled
+}
+
 struct Snapshot: Codable, Equatable {
     var providers: [ProviderStatus]
     var generatedAt: Date
     /// Причина паузы опроса (например, выключен VPN). nil — опрос идёт.
     var paused: String? = nil
     var usage: UsageStats? = nil
+    var cheapVibe: BalanceStatus? = nil
+
+    private enum CodingKeys: String, CodingKey {
+        case providers, generatedAt, paused, usage, cheapVibe
+    }
+
+    init(providers: [ProviderStatus], generatedAt: Date, paused: String? = nil,
+         usage: UsageStats? = nil, cheapVibe: BalanceStatus? = nil) {
+        self.providers = providers
+        self.generatedAt = generatedAt
+        self.paused = paused
+        self.usage = usage
+        self.cheapVibe = cheapVibe
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        providers = try values.decode([ProviderStatus].self, forKey: .providers)
+        generatedAt = try values.decode(Date.self, forKey: .generatedAt)
+        paused = try values.decodeIfPresent(String.self, forKey: .paused)
+        usage = try values.decodeIfPresent(UsageStats.self, forKey: .usage)
+        cheapVibe = try values.decodeIfPresent(BalanceStatus.self, forKey: .cheapVibe)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(providers, forKey: .providers)
+        try values.encode(generatedAt, forKey: .generatedAt)
+        try values.encodeIfPresent(paused, forKey: .paused)
+        try values.encodeIfPresent(usage, forKey: .usage)
+        try values.encodeIfPresent(cheapVibe, forKey: .cheapVibe)
+    }
 
     static var empty: Snapshot {
         Snapshot(providers: Provider.allCases.map { ProviderStatus(provider: $0) }, generatedAt: Date())
