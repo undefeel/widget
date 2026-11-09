@@ -114,6 +114,14 @@ struct BalanceStatus: Codable, Equatable {
     var updatedAt: Date?
     /// Localization key for the last failure, cleared on success.
     var error: String?
+    /// Argument for a formatted error key such as the HTTP status code.
+    var errorCode: Int? = nil
+
+    var localizedError: String? {
+        guard let error else { return nil }
+        if let errorCode { return LF(error, errorCode) }
+        return L(error)
+    }
 }
 
 enum CheapVibeFailure {

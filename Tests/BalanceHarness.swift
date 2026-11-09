@@ -49,6 +49,8 @@ struct BalanceHarness {
         invalid(parse("not json"), "malformed JSON was accepted")
         check(({ if case .failure(.unauthorized) = parse(401, "{}"){ return true }; return false })(),
               "401 was not unauthorized")
+        check(({ if case .failure(.unauthorized) = parse(403, "{}"){ return true }; return false })(),
+              "403 was not unauthorized")
         check(({ if case .failure(.rateLimited) = parse(429, "{}"){ return true }; return false })(),
               "429 was not rateLimited")
         check(({ if case .failure(.http(500)) = parse(500, "{}"){ return true }; return false })(),

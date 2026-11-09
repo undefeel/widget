@@ -205,8 +205,8 @@ private struct BalanceSection: View {
                             .lineLimit(1)
                     }
                 }
-                if let error = balance.error {
-                    Label(L(error), systemImage: "exclamationmark.triangle.fill")
+                if let error = balance.localizedError {
+                    Label(error, systemImage: "exclamationmark.triangle.fill")
                         .font(.caption)
                         .foregroundStyle(.orange)
                         .lineLimit(2)
@@ -233,7 +233,7 @@ private struct BalanceSection: View {
                 parts.append(LF("Остаток: %@", exact))
             }
         }
-        if let error = balance.error { parts.append(L(error)) }
+        if let error = balance.localizedError { parts.append(error) }
         if let updatedAt = balance.updatedAt { parts.append(Fmt.ago(updatedAt, now: store.now)) }
         return parts.joined(separator: " · ")
     }

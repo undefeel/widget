@@ -55,7 +55,7 @@ private struct BalanceFooter: View {
         if let tokens = balance?.tokens {
             let amount = compact ? Fmt.tokens(tokens) : LF("Остаток: %@", Fmt.tokens(tokens))
             let accessibilityLabel = "\(L("Токены CheapVibeCode")): \(amount)"
-            let details = [balance?.error.map(L),
+            let details = [balance?.localizedError,
                            balance?.updatedAt.map { Fmt.ago($0, now: now) }]
                 .compactMap { $0 }.joined(separator: " · ")
             HStack(spacing: 4) {

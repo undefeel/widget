@@ -209,7 +209,9 @@ final class LimitsStore: ObservableObject {
             next.cheapVibe = BalanceStatus(tokens: tokens, updatedAt: Date(), error: nil)
         case .failure(let failure):
             var balance = next.cheapVibe ?? BalanceStatus(tokens: nil, updatedAt: nil, error: nil)
-            balance.error = balanceError(failure)
+            let (key, code) = balanceError(failure)
+            balance.error = key
+            balance.errorCode = code
             next.cheapVibe = balance
         case .notConfigured:
             // Explicit key deletion clears the balance through
@@ -222,13 +224,13 @@ final class LimitsStore: ObservableObject {
         publish(next)
     }
 
-    private func balanceError(_ failure: CheapVibeFailure) -> String {
+    private func balanceError(_ failure: CheapVibeFailure) -> (key: String, code: Int?) {
         switch failure {
-        case .unauthorized: return "Ключ CheapVibeCode недействителен"
-        case .rateLimited: return "CheapVibeCode ограничил частоту запросов"
-        case .network: return "Нет связи с CheapVibeCode"
-        case .invalidResponse: return "Некорректный ответ CheapVibeCode"
-        case .http(let code): return LF("CheapVibeCode вернул ошибку %d", code)
+        case .unauthorized: return ("Ключ CheapVibeCode недействителен", nil)
+        case .rateLimited: return ("CheapVibeCode ограничил частоту запросов", nil)
+        case .network: return ("Нет связи с CheapVibeCode", nil)
+        case .invalidResponse: return ("Некорректный ответ CheapVibeCode", nil)
+        case .http(let code): return ("CheapVibeCode вернул ошибку %d", code)
         }
     }
 

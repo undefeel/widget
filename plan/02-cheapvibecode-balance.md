@@ -87,6 +87,8 @@ struct BalanceStatus: Codable, Equatable {
     var updatedAt: Date?
     /// Localization key for the last failure, cleared on success.
     var error: String?
+    /// Argument for a formatted key such as the HTTP status code.
+    var errorCode: Int?
 }
 
 enum CheapVibeFetchResult {
@@ -179,8 +181,10 @@ In `LimitsStore`:
   the widgets after a successful publication. Deleting a key cancels work,
   clears `cheapVibe`, persists, and reloads widgets so the value disappears.
 - Success sets tokens and `updatedAt`, clears the error, and publishes.
-  Failure keeps the last tokens and timestamp, sets the error key, and
-  publishes. `notConfigured` clears any residual balance.
+  Failure keeps the last tokens and timestamp, sets the error key (and the HTTP
+  status code for the formatted error), and publishes. `notConfigured` leaves
+  the last successful value; explicit key deletion clears it, so a transient
+  Keychain failure cannot erase a good balance.
 - `publish` includes `cheapVibe` in the change test. A balance-only update must
   not advance the limits freshness label (`generatedAt`); existing usage-update
   behavior remains unchanged.

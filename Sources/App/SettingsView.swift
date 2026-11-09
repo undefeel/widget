@@ -153,8 +153,8 @@ private struct BalancePane: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    if let error = balance.error {
-                        Label(L(error), systemImage: "exclamationmark.triangle.fill")
+                    if let error = balance.localizedError {
+                        Label(error, systemImage: "exclamationmark.triangle.fill")
                             .font(.caption)
                             .foregroundStyle(.orange)
                     }
