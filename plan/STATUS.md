@@ -1,8 +1,8 @@
 # Project status
 
-Run: run_0007adffba77
-Stage: 01-review-refresh
-State: complete — all fixes merged, accepted and pushed
+Run: none (stage 02 planning; previous run_0007adffba77 is complete)
+Stage: 02-cheapvibecode-balance (planning)
+State: awaiting user approval; no Run, Task, or Dispatch exists
 
 ## Active
 
@@ -12,13 +12,19 @@ No active dispatches.
 
 ## Queue
 
-No approved work remains. Stage 00 established the workflow; stage 01 completed
-the whole-project review, confirmed fixes and responsive limits refresh.
-See RESULTS.md, 01-review-refresh.md and task review files for evidence.
+Stage 02 is fully planned in `plan/02-cheapvibecode-balance.md`: show the
+remaining CheapVibeCode token balance in all widget sizes and the app panel,
+with the API key stored in macOS Keychain and refreshed independently of VPN.
+The plan is committed and awaits the user's explicit approval. No Run or
+implementation may start before that approval.
+
+Stage 00 established the workflow; stage 01 completed the whole-project review,
+confirmed fixes and responsive limits refresh. See RESULTS.md,
+01-review-refresh.md and task review files for evidence.
 
 ## Validation
 
-Final code integration checkpoint: 663a101. Full acceptance passed 22 tooling
+Previous stage final code integration checkpoint: 663a101. Full acceptance passed 22 tooling
 tests, four standalone Swift harnesses, universal app/widget builds, resources
 and signatures. Synthetic ready-limits publication was 6–7 ms with statistics
 held. Live upstream/interactive UI checks were not claimed.
